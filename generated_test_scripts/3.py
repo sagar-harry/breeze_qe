@@ -1,74 +1,75 @@
 
-import time
-import sys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
+import time
+import sys
+import os
 
-def run_test():
-    # Setup Chrome options
-    chrome_options = Options()
-    chrome_options.add_argument("--incognito")
-    chrome_options.add_argument("--disable-notifications")
-    chrome_options.add_argument("--disable-popup-blocking")
-    
-    # Initialize the WebDriver
-    driver = webdriver.Chrome(options=chrome_options)
-    
-    try:
-        # Maximize browser window
-        driver.maximize_window()
-        
-        # Navigate to the login page
-        driver.get("https://www.saucedemo.com/")
-        
-        # Wait for 3 seconds
-        time.sleep(3)
-        
-        # Input an incorrect username
-        username = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="user-name"]'))
-        )
-        username.send_keys("incorrect_username")
-        
-        # Wait for 3 seconds
-        time.sleep(3)
-        
-        # Input a valid password
-        password = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="password"]'))
-        )
-        password.send_keys("secret_sauce")
-        
-        # Wait for 3 seconds
-        time.sleep(3)
-        
-        # Click the login button
-        login_button = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="login-button"]'))
-        )
-        login_button.click()
-        
-        # Wait for 3 seconds
-        time.sleep(3)
-        
-        # Verify the error message indicating invalid credentials
-        error_message = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//*[contains(text(), "error")]'))
-        )
-        assert "invalid" in error_message.text.lower()
-        
-        # If test passed
-        sys.exit(0)
-    
-    except Exception as e:
-        print(f"Test failed: {e}")
-        sys.exit(1)
-    
-    finally:
-        # Close the WebDriver
-        driver.quit()
+try:
+    options = Options()
+    options.add_argument("--incognito")
+    options.add_argument("--disable-notifications")
+    options.add_argument("--disable-popup-blocking")
+    options.add_argument("--disable-features=NetworkService")
+    driver = webdriver.Chrome(options=options)
 
-run_test()
+    driver.get("https://saucedemo.com/")
+    driver.maximize_window()
+    time.sleep(5)
+
+    wait = WebDriverWait(driver, 10)
+    
+    # Login
+    wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@id="user"]'))).send_keys("standard")
+    wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@id="password"]'))).send_keys("secret_sauce")
+    time.sleep(3)
+    wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="login-button"]'))).click()
+    time.sleep(3)
+
+    # Add items to cart
+    wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="add-to-cart-sauce-labs-bike-light"]'))).click()
+    time.sleep(3)
+    wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="add-to-cart-sauce-labs-bolt-t-shirt"]'))).click()
+    time.sleep(3)
+
+    # Go to cart and checkout
+    wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="123"]/a'))).click()
+    time.sleep(3)
+    wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="checkout"]'))).click()
+    time.sleep(3)
+
+    # Enter shipping information
+    wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@id="first-name"]'))).send_keys("Jonnathan")
+    wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@id="last-name"]'))).send_keys("K")
+    wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@id="postal-code"]'))).send_keys("10007")
+    time.sleep(3)
+
+    # Continue to purchase
+    wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="continue"]'))).click()
+    time.sleep(3)
+    wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="finish"]'))).click()
+    time.sleep(3)
+
+    # Capture snapshot before logging out
+    screenshot_path = r"C:\Users\Administrator\Desktop\QE_COE\automated_pipeline_2\captured_screenshots\homepage.png"
+    driver.save_screenshot(screenshot_path)
+
+    # Logout
+    wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="react-burger-menu-btn"]'))).click()
+    time.sleep(3)
+    wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="logout_sidebar_link"]'))).click()
+    time.sleep(3)
+
+    sys.exit(0)
+
+except Exception as e:
+    print("Test case failed due to: ", str(e))
+    screenshot_path = r"C:\Users\Administrator\Desktop\QE_COE\automated_pipeline_2\captured_screenshots\error.png"
+    driver.save_screenshot(screenshot_path)
+    sys.exit(1)
+
+finally:
+    driver.quit()
