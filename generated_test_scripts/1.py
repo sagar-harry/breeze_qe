@@ -1,70 +1,88 @@
 
-import sys
-import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
+import time
+import sys
 
-# Configure Chrome options
+# Initialize Chrome options
 chrome_options = Options()
 chrome_options.add_argument("--incognito")
+chrome_options.add_argument("--disable-popup-blocking")
 chrome_options.add_argument("--disable-notifications")
-chrome_options.add_experimental_option("prefs", {"profile.default_content_setting_values.notifications": 2})
 
-# Initialize the Chrome driver
+# Initialize WebDriver
 driver = webdriver.Chrome(options=chrome_options)
 
 try:
-    # Maximize the page
+    # Maximize the window
     driver.maximize_window()
     
-    # Define wait
-    wait = WebDriverWait(driver, 10)
-    
-    # Navigate to login page
+    # Navigate to the homepage
     driver.get("https://www.saucedemo.com/")
     
-    # Wait for 3 seconds
-    time.sleep(3)
-    
-    # Given the user is on the login page
-    # Locate username field, enter username
-    username_field = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="user-name"]')))
-    username_field.send_keys("testUser")
-    
-    # Wait for 3 seconds
-    time.sleep(3)
-    
-    # Locate password field, enter password
-    password_field = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="password"]')))
-    password_field.send_keys("securePassword")
-    
-    # Wait for 3 seconds
-    time.sleep(3)
-    
-    # Locate and click login button
-    login_button = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="login-button"]')))
-    login_button.click()
+    # Scenario 1: Enter username and password on the login page
+    try:
+        # Wait for page to load
+        time.sleep(3)
+        
+        # Enter username
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="user-name"]'))).send_keys("standard_user")
+        time.sleep(3)
+        
+        # Enter password
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="password"]'))).send_keys("secret_sauce")
+        time.sleep(3)
+        
+        # Click login button
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="login-button"]'))).click()
+        time.sleep(3)
+        
+        # Verify redirection to the dashboard
+        WebDriverWait(driver, 10).until(EC.url_contains("https://www.saucedemo.com/inventory.html"))
+        
+        # Verify presence of a welcome message or dashboard element
+        # Example check: presence of "fleece jacket" element
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="add-to-cart-sauce-labs-fleece-jacket"]')))
 
-    # Wait for 3 seconds
-    time.sleep(3)
-    
-    # Then the user should be redirected to the homepage
-    # Assuming redirection success is checked by presence of a specific element like a welcome message
-    welcome_message = wait.until(EC.presence_of_element_located((By.XPATH, "//h1[contains(text(),'Welcome, testUser!')]")))
-    
-    # Verify welcome message is displayed (exact locator for welcome message needs to be adjusted according to actual implementation)
-    assert "Welcome, testUser!" in welcome_message.text
+        print("Test case Scenario 1 passed")
+    except Exception as e:
+        print(f"Test case Scenario 1 failed: {e}")
+        sys.exit(1)
 
-    # Exit with success code
+    # Scenario 2: Enter username and password on the login page with validation on another page
+    try:
+        # Log out to return to login page
+        # Click side bar
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="react-burger-menu-btn"]'))).click()
+        time.sleep(3)
+        # Log out
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="logout_sidebar_link"]'))).click()
+        time.sleep(3)
+
+        # Repeat login process
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="user-name"]'))).send_keys("standard_user")
+        time.sleep(3)
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="password"]'))).send_keys("secret_sauce")
+        time.sleep(3)
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="login-button"]'))).click()
+        time.sleep(3)
+        
+        # Verify redirection to the dashboard
+        WebDriverWait(driver, 10).until(EC.url_contains("https://www.saucedemo.com/inventory.html"))
+        
+        # Verify presence of a welcome message or dashboard element
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="add-to-cart-sauce-labs-fleece-jacket"]')))
+
+        print("Test case Scenario 2 passed")
+    except Exception as e:
+        print(f"Test case Scenario 2 failed: {e}")
+        sys.exit(1)
+
+    # If all scenarios pass
     sys.exit(0)
-
-except Exception as e:
-    print(f"Test failed: {e}")
-    # Exit with failure code
-    sys.exit(1)
 
 finally:
     # Quit the driver
