@@ -6,74 +6,66 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import TimeoutException
 
-def test_login():
-    # Set up Chrome options
-    chrome_options = Options()
-    chrome_options.add_argument("--disable-notifications")
-    chrome_options.add_argument("--incognito")
-    chrome_options.add_argument("--start-maximized")
+# Configure Chrome options
+chrome_options = Options()
+chrome_options.add_argument("--incognito")
+chrome_options.add_argument("--disable-notifications")
+chrome_options.add_experimental_option("prefs", {"profile.default_content_setting_values.notifications": 2})
 
-    # Initialize the web driver
-    driver = webdriver.Chrome(options=chrome_options)
+# Initialize the Chrome driver
+driver = webdriver.Chrome(options=chrome_options)
 
-    # Gherkin: Given I am on the login page
+try:
+    # Maximize the page
+    driver.maximize_window()
+    
+    # Define wait
+    wait = WebDriverWait(driver, 10)
+    
+    # Navigate to login page
     driver.get("https://www.saucedemo.com/")
+    
+    # Wait for 3 seconds
+    time.sleep(3)
+    
+    # Given the user is on the login page
+    # Locate username field, enter username
+    username_field = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="user-name"]')))
+    username_field.send_keys("testUser")
+    
+    # Wait for 3 seconds
+    time.sleep(3)
+    
+    # Locate password field, enter password
+    password_field = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="password"]')))
+    password_field.send_keys("securePassword")
+    
+    # Wait for 3 seconds
+    time.sleep(3)
+    
+    # Locate and click login button
+    login_button = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="login-button"]')))
+    login_button.click()
 
-    try:
-        # Maximize the window
-        driver.maximize_window()
+    # Wait for 3 seconds
+    time.sleep(3)
+    
+    # Then the user should be redirected to the homepage
+    # Assuming redirection success is checked by presence of a specific element like a welcome message
+    welcome_message = wait.until(EC.presence_of_element_located((By.XPATH, "//h1[contains(text(),'Welcome, testUser!')]")))
+    
+    # Verify welcome message is displayed (exact locator for welcome message needs to be adjusted according to actual implementation)
+    assert "Welcome, testUser!" in welcome_message.text
 
-        # Add sleep before each action
-        time.sleep(3)
+    # Exit with success code
+    sys.exit(0)
 
-        # Gherkin: When I enter a valid username
-        username_element = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[@id="user-name"]'))
-        )
-        username_element.send_keys("standard_user")
+except Exception as e:
+    print(f"Test failed: {e}")
+    # Exit with failure code
+    sys.exit(1)
 
-        time.sleep(3)
-
-        # Gherkin: And I enter a valid password
-        password_element = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[@id="password"]'))
-        )
-        password_element.send_keys("secret_sauce")
-
-        time.sleep(3)
-
-        # Gherkin: And I click the "Login" button
-        login_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, '//*[@id="login-button"]'))
-        )
-        login_button.click()
-
-        time.sleep(3)
-
-        # Gherkin: Then I should be redirected to the homepage
-        WebDriverWait(driver, 10).until(
-            EC.url_to_be("https://www.saucedemo.com/inventory.html")
-        )
-
-        # Gherkin: And I should see a welcome message (we assume welcome message exists as part of the homepage verification)
-        # Checking for the inventory page's typical element as a placeholder for 'Welcome message'
-        inventory_item = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[@id="inventory_container"]'))
-        )
-
-        time.sleep(3)
-
-        # Test Passed
-        sys.exit(0)
-
-    except TimeoutException as e:
-        print(f"Test failed: {e}")
-        sys.exit(1)
-
-    finally:
-        driver.quit()
-
-if __name__ == "__main__":
-    test_login()
+finally:
+    # Quit the driver
+    driver.quit()

@@ -1,57 +1,76 @@
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
 import sys
 
-# Setting up Chrome options
-chrome_options = Options()
-chrome_options.add_argument("--incognito")
-chrome_options.add_argument("--disable-notifications")
-chrome_options.add_argument("--disable-popup-blocking")
-chrome_options.add_argument("--start-maximized")
-
-# Initializing WebDriver
-driver = webdriver.Chrome(options=chrome_options)
-
-try:
-    # Navigate to the homepage
-    driver.get('https://www.saucedemo.com/')
+def test_login_with_incorrect_password():
+    # Options for Chrome driver
+    options = webdriver.ChromeOptions()
+    options.add_argument("--disable-notifications")
+    options.add_argument("--incognito")
     
-    # Define a function for waiting and locating elements
-    def wait_for_element(xpath):
-        time.sleep(3)
-        return driver.find_element(By.XPATH, xpath)
+    # Instantiate the Chrome WebDriver
+    driver = webdriver.Chrome(options=options)
     
-    # Step 1: Navigation to Login Page
-    # (Since we directly navigate to the login page, this step is inherently completed)
-
-    # Step 2: Entering username
-    username_field = wait_for_element('//*[@id="user-name"]')
-    username_field.send_keys('user123')
-
-    # Step 3: Entering incorrect password
-    password_field = wait_for_element('//*[@id="password"]')
-    password_field.send_keys('incorrectPasswd')
-
-    # Step 4: Clicking the 'Login' button
-    login_button = wait_for_element('//*[@id="login-button"]')
-    login_button.click()
-
-    # Step 5: Validating error message
-    time.sleep(3)
-    error_message = wait_for_element('//div[contains(@class, "error-message-container")]//h3')
-    if "Epic sadface: Username and password do not match any user in this service" in error_message.text:
-        print("Test Case Passed")
-        sys.exit(0)
-    else:
-        print("Test Case Failed: Error message did not match")
-        sys.exit(1)
+    try:
+        # Navigate to the home page
+        driver.get("https://www.saucedemo.com/")
         
-except Exception as e:
-    print(f"Test Case Failed due to Exception: {e}")
-    sys.exit(1)
-finally:
-    # Close and quit the driver
-    driver.quit()
+        # Maximize the browser window
+        driver.maximize_window()
+
+        # Wait for 3 seconds before performing any actions
+        time.sleep(3)
+        
+        # Locate the username field and enter a valid username
+        username_field = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, '//*[@id="user-name"]'))
+        )
+        username_field.send_keys("valid.username@example.com")
+        
+        # Wait for 3 seconds before performing any actions
+        time.sleep(3)
+        
+        # Locate the password field and enter an incorrect password
+        password_field = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, '//*[@id="password"]'))
+        )
+        password_field.send_keys("incorrectPassword123")
+        
+        # Wait for 3 seconds before performing any actions
+        time.sleep(3)
+        
+        # Locate the login button and click it
+        login_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//*[@id="login-button"]'))
+        )
+        login_button.click()
+        
+        # Wait for 3 seconds before performing any actions
+        time.sleep(3)
+        
+        # Assert that the error message is displayed
+        error_message = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, "//h3[@data-test='error']"))
+        )
+        
+        if error_message.text == "Invalid username or password":
+            print("Test case passed.")
+            sys.exit(0)
+        else:
+            print("Test case failed.")
+            sys.exit(1)
+            
+    except Exception as e:
+        print("Exception occurred:", e)
+        print("Test case failed.")
+        sys.exit(1) 
+    finally:
+        # Close the browser
+        driver.quit()
+
+if __name__ == "__main__":
+    test_login_with_incorrect_password()
