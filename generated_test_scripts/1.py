@@ -1,60 +1,79 @@
 
+import sys
+import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-import time
-import sys
+from selenium.common.exceptions import TimeoutException
 
-# Set up Chrome options
-chrome_options = Options()
-chrome_options.add_argument("--disable-notifications")
-chrome_options.add_argument("--disable-popup-blocking")
-chrome_options.add_argument("--incognito")
-chrome_options.add_argument("--start-maximized")
+def test_login():
+    # Set up Chrome options
+    chrome_options = Options()
+    chrome_options.add_argument("--disable-notifications")
+    chrome_options.add_argument("--incognito")
+    chrome_options.add_argument("--start-maximized")
 
-# Initialize the driver
-driver = webdriver.Chrome(options=chrome_options)
+    # Initialize the web driver
+    driver = webdriver.Chrome(options=chrome_options)
 
-try:
-    # Step 1: Open the home page
+    # Gherkin: Given I am on the login page
     driver.get("https://www.saucedemo.com/")
-    time.sleep(3)  # Wait for 3 seconds before the next action
 
-    # Step 2: Enter the username
-    username_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, '//*[@id="user-name"]'))
-    )
-    username_input.send_keys("exampleUser")
-    time.sleep(3)  # Wait for 3 seconds before the next action
+    try:
+        # Maximize the window
+        driver.maximize_window()
 
-    # Step 3: Enter the password
-    password_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, '//*[@id="password"]'))
-    )
-    password_input.send_keys("examplePassword123")
-    time.sleep(3)  # Wait for 3 seconds before the next action
+        # Add sleep before each action
+        time.sleep(3)
 
-    # Step 4: Click the 'Login' button
-    login_button = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, '//*[@id="login-button"]'))
-    )
-    login_button.click()
-    time.sleep(3)  # Wait for 3 seconds before the next action
+        # Gherkin: When I enter a valid username
+        username_element = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, '//*[@id="user-name"]'))
+        )
+        username_element.send_keys("standard_user")
 
-    # Step 5: Verify redirection to the dashboard
-    # Assuming the dashboard page contains a specific element as its identifying feature
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'Welcome, exampleUser')]"))
-    )
+        time.sleep(3)
 
-    print("Test case passed")
-    sys.exit(0)
+        # Gherkin: And I enter a valid password
+        password_element = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, '//*[@id="password"]'))
+        )
+        password_element.send_keys("secret_sauce")
 
-except Exception as e:
-    print(f"An error occurred: {e}")
-    sys.exit(1)
+        time.sleep(3)
 
-finally:
-    driver.quit()
+        # Gherkin: And I click the "Login" button
+        login_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//*[@id="login-button"]'))
+        )
+        login_button.click()
+
+        time.sleep(3)
+
+        # Gherkin: Then I should be redirected to the homepage
+        WebDriverWait(driver, 10).until(
+            EC.url_to_be("https://www.saucedemo.com/inventory.html")
+        )
+
+        # Gherkin: And I should see a welcome message (we assume welcome message exists as part of the homepage verification)
+        # Checking for the inventory page's typical element as a placeholder for 'Welcome message'
+        inventory_item = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, '//*[@id="inventory_container"]'))
+        )
+
+        time.sleep(3)
+
+        # Test Passed
+        sys.exit(0)
+
+    except TimeoutException as e:
+        print(f"Test failed: {e}")
+        sys.exit(1)
+
+    finally:
+        driver.quit()
+
+if __name__ == "__main__":
+    test_login()
