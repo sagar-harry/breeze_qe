@@ -1,14 +1,14 @@
 {
     "1": {
         "testStatus": "Failed",
-        "exectuionTime": "0.016975"
+        "exectuionTime": "7.041098"
     },
     "2": {
         "testStatus": "Failed",
-        "exectuionTime": "0.017108"
+        "exectuionTime": "0.265186"
     },
     "3": {
         "testStatus": "Failed",
-        "exectuionTime": "0.016624"
+        "exectuionTime": "0.280432"
     }
 }
