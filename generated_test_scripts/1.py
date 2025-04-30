@@ -1,61 +1,83 @@
 
-import sys
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 import time
+import sys
 
-def main():
-    options = Options()
-    options.add_argument("--incognito")
-    options.add_argument("--disable-notifications")
+def test_login():
+    # Setup Chrome options
+    chrome_options = Options()
+    chrome_options.add_argument("--incognito")
+    chrome_options.add_argument("--disable-notifications")
 
-    driver = webdriver.Chrome(options=options)
-    driver.maximize_window()
+    # Initialize the WebDriver
+    driver = webdriver.Chrome(options=chrome_options)
 
     try:
-        # Given the user is on the login page
+        # Maximize the browser window
+        driver.maximize_window()
+
+        # Navigate to the login page
         driver.get("https://www.saucedemo.com/")
+
+        # Wait for 3 seconds
         time.sleep(3)
 
-        # When the user enters the username "testuser"
-        user_name_input = WebDriverWait(driver, 10).until(
+        # Locate username field and enter username
+        username_element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, '//*[@id="user-name"]'))
         )
-        user_name_input.send_keys("testuser")
+        username_element.send_keys("validUsername")
+
+        # Wait for 3 seconds
         time.sleep(3)
 
-        # And the user enters the password "securepassword"
-        password_input = WebDriverWait(driver, 10).until(
+        # Locate password field and enter password
+        password_element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, '//*[@id="password"]'))
         )
-        password_input.send_keys("securepassword")
+        password_element.send_keys("validPassword")
+
+        # Wait for 3 seconds
         time.sleep(3)
 
-        # And the user clicks the 'Login' button
-        login_button = WebDriverWait(driver, 10).until(
+        # Locate login button and click
+        login_button_element = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, '//*[@id="login-button"]'))
         )
-        login_button.click()
+        login_button_element.click()
+
+        # Wait for 3 seconds
         time.sleep(3)
 
-        # Then the user should be redirected to the validation page
-        # Assuming validation page has a specific element as an identifier (replace with actual identifier)
-        validation_message = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//div[text()="Welcome, testuser!"]'))
+        # Verify redirection to the home page and presence of welcome message
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "html"))
         )
 
-        # And the user should see a message "Welcome, testuser!" on the validation page
-        assert "Welcome, testuser!" in validation_message.text
-        sys.exit(0)
+        # Check for expected username after login, replace 'WELCOME_MESSAGE_ELEMENT' with actual locator
+        try:
+            welcome_message_elem = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//span[text()="Welcome, validUsername!"]'))
+            )
+            # If the welcome message is found, test passes with exit code 0
+            if welcome_message_elem.is_displayed():
+                sys.exit(0)
+        except TimeoutException:
+            # If welcome message is not found within the time limit, test fails
+            sys.exit(1)
 
     except Exception as e:
-        print(f"Test Failed: {e}")
+        # If any exception occurs, print it and exit with code 1
+        print(f"Test failed: {e}")
         sys.exit(1)
+
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    main()
+    test_login()

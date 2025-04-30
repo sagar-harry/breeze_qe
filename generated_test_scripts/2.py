@@ -1,66 +1,65 @@
 
-import time
-import sys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import time
+import sys
 
 def test_login_with_incorrect_password():
-    # Set up Chrome options
-    chrome_options = Options()
-    chrome_options.add_argument("--incognito")
-    chrome_options.add_argument("--disable-notifications")
-    chrome_options.add_argument("--start-maximized")
+    # Initialize WebDriver options
+    options = webdriver.ChromeOptions()
+    options.add_argument('--incognito')
+    options.add_argument('--disable-notifications')
     
-    # Initialize the Chrome driver
-    driver = webdriver.Chrome(options=chrome_options)
+    # Initialize the WebDriver
+    driver = webdriver.Chrome(options=options)
+
     try:
-        # Navigate to the login page
+        # Maximize the browser window
+        driver.maximize_window()
+
+        # Navigate to the home page
         driver.get("https://www.saucedemo.com/")
-        
-        # Wait for the username field and enter the valid username
-        username_field = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[@id="user-name"]'))
-        )
+
+        # Wait for the login elements to load
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="user-name"]')))
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="password"]')))
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="login-button"]')))
+
+        # Background: Given the user is on the login page
         time.sleep(3)
-        username_field.send_keys("validUsername")
-        
-        # Wait for the password field and enter the invalid password
-        password_field = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[@id="password"]'))
-        )
-        time.sleep(3)
-        password_field.send_keys("invalidPassword")
-        
-        # Wait for the login button and click it
-        login_button = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[@id="login-button"]'))
-        )
-        time.sleep(3)
+
+        # Scenario: Fail to login with incorrect password
+        # When the user enters their username
+        username_field = driver.find_element(By.XPATH, '//*[@id="user-name"]')
+        username_field.send_keys("standard_user")
+
+        # And the user enters an incorrect password
+        password_field = driver.find_element(By.XPATH, '//*[@id="password"]')
+        password_field.send_keys("incorrect_password")
+
+        # And the user clicks the 'Login' button
+        login_button = driver.find_element(By.XPATH, '//*[@id="login-button"]')
         login_button.click()
-        
-        # Wait for the error message to appear
-        error_message = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CLASS_NAME, 'error-message-container'))
-        )
+
         time.sleep(3)
+
+        # Then the user should see an error message indicating an incorrect password
+        error_message = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//*[@data-test="error"]')))
         
-        # Verify if error message is displayed
         if error_message.is_displayed():
-            print("Test case passed: Error message displayed as expected.")
+            print("Error message is correctly displayed: Test Passed")
             sys.exit(0)
         else:
-            print("Test case failed: Error message not displayed.")
+            print("Error message is not displayed: Test Failed")
             sys.exit(1)
+
     except Exception as e:
-        print(f"Test case failed: {e}")
+        print("An exception occurred: ", str(e))
         sys.exit(1)
     finally:
         # Close the browser
         driver.quit()
 
-# Execute the test function
-if __name__ == "__main__":
-    test_login_with_incorrect_password()
+test_login_with_incorrect_password()
