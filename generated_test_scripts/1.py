@@ -1,83 +1,88 @@
 
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
-import time
 import sys
+import time
 
-def test_login():
-    # Setup Chrome options
-    chrome_options = Options()
-    chrome_options.add_argument("--incognito")
-    chrome_options.add_argument("--disable-notifications")
-
-    # Initialize the WebDriver
-    driver = webdriver.Chrome(options=chrome_options)
-
+def test_login_scenarios():
     try:
+        # Set up Chrome options
+        options = webdriver.ChromeOptions()
+        options.add_argument("--incognito")
+        options.add_argument("--disable-notifications")
+        options.add_argument("--disable-popup-blocking")
+        driver = webdriver.Chrome(options=options)
+
         # Maximize the browser window
         driver.maximize_window()
 
-        # Navigate to the login page
+        # Navigate to the home page
         driver.get("https://www.saucedemo.com/")
-
-        # Wait for 3 seconds
-        time.sleep(3)
-
-        # Locate username field and enter username
-        username_element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="user-name"]'))
-        )
-        username_element.send_keys("validUsername")
-
-        # Wait for 3 seconds
-        time.sleep(3)
-
-        # Locate password field and enter password
-        password_element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="password"]'))
-        )
-        password_element.send_keys("validPassword")
-
-        # Wait for 3 seconds
-        time.sleep(3)
-
-        # Locate login button and click
-        login_button_element = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, '//*[@id="login-button"]'))
-        )
-        login_button_element.click()
-
-        # Wait for 3 seconds
-        time.sleep(3)
-
-        # Verify redirection to the home page and presence of welcome message
+        
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "html"))
+            EC.presence_of_element_located((By.ID, "login-button"))
         )
 
-        # Check for expected username after login, replace 'WELCOME_MESSAGE_ELEMENT' with actual locator
-        try:
-            welcome_message_elem = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//span[text()="Welcome, validUsername!"]'))
-            )
-            # If the welcome message is found, test passes with exit code 0
-            if welcome_message_elem.is_displayed():
-                sys.exit(0)
-        except TimeoutException:
-            # If welcome message is not found within the time limit, test fails
-            sys.exit(1)
+        # Scenario 1: Successful login with valid credentials
+        time.sleep(3)
+        driver.find_element(By.ID, "user-name").send_keys("valid_username")  # Replace with valid credentials
+        time.sleep(3)
+        driver.find_element(By.ID, "password").send_keys("valid_password")  # Replace with valid password
+        time.sleep(3)
+        driver.find_element(By.ID, "login-button").click()
+        time.sleep(3)
+
+        WebDriverWait(driver, 10).until(
+            EC.title_contains("Products")
+        )
+
+        # Perform check for a welcome message on the dashboard
+        # Assuming that a welcome message or specific element is present on the page. This should be modified to match actual application
+        welcome_displayed = driver.find_element(By.ID, "react-burger-menu-btn").is_displayed()
+        assert welcome_displayed is True, "Welcome message not displayed after login"
+        
+        # Log out to proceed to the next test
+        driver.find_element(By.ID, "react-burger-menu-btn").click()
+        time.sleep(3)
+        driver.find_element(By.ID, "logout_sidebar_link").click()
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "login-button"))
+        )
+
+        # Scenario 2: Unsuccessful login with invalid credentials
+        time.sleep(3)
+        driver.find_element(By.ID, "user-name").send_keys("invalid_username")
+        time.sleep(3)
+        driver.find_element(By.ID, "password").send_keys("invalid_password")
+        time.sleep(3)
+        driver.find_element(By.ID, "login-button").click()
+        time.sleep(3)
+
+        error_displayed = driver.find_element(By.XPATH, "//*[contains(text(), 'Username and password do not match')]").is_displayed()
+        assert error_displayed is True, "Error message not displayed for invalid credentials"
+
+        # Scenario 3: Validate login error without credentials
+        time.sleep(3)
+        driver.find_element(By.NAME, "user-name").clear()
+        driver.find_element(By.NAME, "password").clear()
+        time.sleep(3)
+        driver.find_element(By.ID, "login-button").click()
+
+        missing_cred_error_displayed = driver.find_element(By.XPATH, "//*[contains(text(), 'Username is required')]").is_displayed()
+        assert missing_cred_error_displayed is True, "Error message not displayed for missing credentials"
+
+        # Exit with code 0 if all tests passed
+        sys.exit(0)
 
     except Exception as e:
-        # If any exception occurs, print it and exit with code 1
-        print(f"Test failed: {e}")
+        print("Test failed:", e)
         sys.exit(1)
 
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    test_login()
+    test_login_scenarios()

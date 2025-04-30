@@ -1,65 +1,64 @@
 
+import sys
+import time
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import time
-import sys
 
-def test_login_with_incorrect_password():
-    # Initialize WebDriver options
-    options = webdriver.ChromeOptions()
-    options.add_argument('--incognito')
-    options.add_argument('--disable-notifications')
+# Set up Chrome options
+chrome_options = Options()
+chrome_options.add_argument("--incognito")
+chrome_options.add_argument("--disable-notifications")
+chrome_options.add_argument("--disable-popup-blocking")
+
+# Initialize the WebDriver
+driver = webdriver.Chrome(options=chrome_options)
+
+try:
+    # Navigate to the homepage
+    driver.get("https://www.saucedemo.com/")
     
-    # Initialize the WebDriver
-    driver = webdriver.Chrome(options=options)
+    # Maximize the window
+    driver.maximize_window()
 
-    try:
-        # Maximize the browser window
-        driver.maximize_window()
+    # Define explicit wait
+    wait = WebDriverWait(driver, 10)
 
-        # Navigate to the home page
-        driver.get("https://www.saucedemo.com/")
+    # Wait and perform 'Given I am on the login page'
+    time.sleep(3)
+    
+    # Wait and perform 'When I enter valid username as "validUsername"'
+    username_field = wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@id="user-name"]')))
+    username_field.send_keys("validUsername")
+    time.sleep(3)
 
-        # Wait for the login elements to load
-        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="user-name"]')))
-        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="password"]')))
-        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="login-button"]')))
+    # Wait and perform 'And I enter an incorrect password as "incorrectPassword"'
+    password_field = wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@id="password"]')))
+    password_field.send_keys("incorrectPassword")
+    time.sleep(3)
 
-        # Background: Given the user is on the login page
-        time.sleep(3)
+    # Wait and perform 'And I click the "Login" button'
+    login_button = wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@id="login-button"]')))
+    login_button.click()
+    time.sleep(3)
 
-        # Scenario: Fail to login with incorrect password
-        # When the user enters their username
-        username_field = driver.find_element(By.XPATH, '//*[@id="user-name"]')
-        username_field.send_keys("standard_user")
+    # Wait and perform 'Then I should see an error message indicating invalid credentials'
+    error_message_present = wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@data-test="error"]')))
 
-        # And the user enters an incorrect password
-        password_field = driver.find_element(By.XPATH, '//*[@id="password"]')
-        password_field.send_keys("incorrect_password")
-
-        # And the user clicks the 'Login' button
-        login_button = driver.find_element(By.XPATH, '//*[@id="login-button"]')
-        login_button.click()
-
-        time.sleep(3)
-
-        # Then the user should see an error message indicating an incorrect password
-        error_message = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '//*[@data-test="error"]')))
-        
-        if error_message.is_displayed():
-            print("Error message is correctly displayed: Test Passed")
-            sys.exit(0)
-        else:
-            print("Error message is not displayed: Test Failed")
-            sys.exit(1)
-
-    except Exception as e:
-        print("An exception occurred: ", str(e))
+    # Validate the presence of error message
+    if error_message_present:
+        print("Test Passed: Error message for invalid credentials is displayed.")
+        sys.exit(0)
+    else:
+        print("Test Failed: No error message found.")
         sys.exit(1)
-    finally:
-        # Close the browser
-        driver.quit()
 
-test_login_with_incorrect_password()
+except NoSuchElementException as e:
+    print(f"Test Failed: {str(e)}")
+    sys.exit(1)
+finally:
+    # Clean up
+    driver.quit()
